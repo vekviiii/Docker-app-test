@@ -1,0 +1,53 @@
+# Dependency directories
+node_modules/
+**/node_modules/
+
+# Build and IDE files
+build/
+obj/
+.vscode/
+.vs/
+**/.vscode/
+**/.vs/
+**/*.user
+**/*.dbmdl
+**/*.jfm
+
+# System and project files
+.DS_Store
+Thumbs.db
+npm-debug.log
+**/npm-debug.log
+
+# Docker and Compose
+.dockerignore
+**/.dockerignore
+Dockerfile*
+**/Dockerfile*
+docker-compose*
+**/docker-compose*
+
+# Git
+.git/
+**/.git/
+.gitignore
+**/.gitignore
+
+# Environment and secrets
+.env
+**/.env
+**/secrets.dev.yaml
+**/values.dev.yaml
+
+# Eclipse/IDEA
+**/.classpath
+**/.project
+**/.settings
+**/.toolstarget
+
+# Helm charts
+**/charts
+
+# Docs
+LICENSE
+README.md
