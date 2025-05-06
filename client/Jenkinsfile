@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'docker build -t my-react:dev .'
+                sh 'docker build -t my-react:dev ./client'
             }
         }
         stage('Test') {
