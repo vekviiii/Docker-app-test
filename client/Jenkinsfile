@@ -1,6 +1,18 @@
 pipeline {
     agent any
     stages {
+        stage('Cleanup') {
+            steps {
+                sh '''
+                echo "Cleaning up stopped containers..."
+                docker container prune -f
+
+                echo "Cleaning up dangling images..."
+                docker image prune -f
+                '''
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('client') {
@@ -8,26 +20,28 @@ pipeline {
                 }
             }
         }
+
         stage('Test') {
             steps {
-                sh 'docker run my-react:dev npm run test'
+                sh 'docker run --rm my-react:dev npm run test'
             }
         }
+
         stage('Deploy') {
             steps {
-                // Kill any container using port 5173
                 sh '''
+                CONTAINER_NAME=my-react-app
                 PORT=5173
-                CONTAINER_ID=$(docker ps -q --filter "publish=${PORT}")
-                if [ ! -z "$CONTAINER_ID" ]; then
-                    echo "Stopping container on port $PORT"
-                    docker stop $CONTAINER_ID
-                    docker rm $CONTAINER_ID
-                fi
-                '''
 
-                // Run the new container
-                sh 'docker run -d -p 5173:5173 my-react:dev'
+                # Stop and remove existing container with the same name
+                if [ "$(docker ps -aq -f name=^/${CONTAINER_NAME}$)" ]; then
+                    echo "Stopping existing container $CONTAINER_NAME"
+                    docker rm -f $CONTAINER_NAME
+                fi
+
+                # Run new container
+                docker run -d --name $CONTAINER_NAME -p ${PORT}:${PORT} my-react:dev
+                '''
             }
         }
     }
