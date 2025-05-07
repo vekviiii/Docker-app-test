@@ -15,6 +15,18 @@ pipeline {
         }
         stage('Deploy') {
             steps {
+                // Kill any container using port 5173
+                sh '''
+                PORT=5173
+                CONTAINER_ID=$(docker ps -q --filter "publish=${PORT}")
+                if [ ! -z "$CONTAINER_ID" ]; then
+                    echo "Stopping container on port $PORT"
+                    docker stop $CONTAINER_ID
+                    docker rm $CONTAINER_ID
+                fi
+                '''
+
+                // Run the new container
                 sh 'docker run -d -p 5173:5173 my-react:dev'
             }
         }
