@@ -13,10 +13,28 @@ pipeline {
             }
         }
 
+        stage('Cleanup Images') {
+            steps {
+                sh '''
+                echo "Removing dangling images..."
+                docker image prune -f
+
+                echo "Removing untagged images..."
+                docker images -f "dangling=true" -q | xargs -r docker rmi
+
+                echo "Removing older versions of my-react:dev except latest..."
+                IMAGE_IDS=$(docker images my-react:dev --format "{{.ID}}" | tail -n +2)
+                if [ "$IMAGE_IDS" ]; then
+                echo "$IMAGE_IDS" | xargs -r docker rmi
+                fi
+                '''
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('client') {
-                    sh 'docker build -t my-react:dev .'
+                    sh 'docker build --rm --force-rm -t my-react:dev .'
                 }
             }
         }
