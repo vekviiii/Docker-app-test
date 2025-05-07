@@ -33,13 +33,20 @@ pipeline {
                 CONTAINER_NAME=my-react
                 PORT=5173
 
-                # Stop and remove existing container with the same name
+                # Find and kill any container using the same port
+                CONFLICTING=$(docker ps --format '{{.ID}} {{.Ports}}' | grep ":${PORT}->" | awk '{print $1}')
+                if [ "$CONFLICTING" ]; then
+                    echo "Killing container(s) using port $PORT: $CONFLICTING"
+                    docker rm -f $CONFLICTING
+                fi
+
+                # Remove existing container by name if it still exists
                 if [ "$(docker ps -aq -f name=^/${CONTAINER_NAME}$)" ]; then
-                    echo "Stopping existing container $CONTAINER_NAME"
+                    echo "Removing old container named $CONTAINER_NAME"
                     docker rm -f $CONTAINER_NAME
                 fi
 
-                # Run new container
+                echo "Running new container..."
                 docker run -d --name $CONTAINER_NAME -p ${PORT}:${PORT} my-react:dev
                 '''
             }
