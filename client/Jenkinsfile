@@ -1,31 +1,38 @@
 pipeline {
     agent any
     stages {
-        stage('Cleanup') {
+
+        stage('Cleanup Containers') {
             steps {
                 sh '''
-                echo "Cleaning up stopped containers..."
+                echo "Cleaning up all stopped containers..."
                 docker container prune -f
-
-                echo "Cleaning up dangling images..."
-                docker image prune -f
                 '''
             }
         }
 
-        stage('Cleanup Images') {
+        stage('Cleanup Old Images') {
             steps {
                 sh '''
-                echo "Removing dangling images..."
-                docker image prune -f
+                echo "Finding containers using dangling or old images..."
+                # Remove containers using untagged or dangling images
+                DANGLING_IMAGES=$(docker images -f "dangling=true" -q)
+                for IMAGE in $DANGLING_IMAGES; do
+                    CONTAINERS=$(docker ps -a -q --filter "ancestor=$IMAGE")
+                    if [ "$CONTAINERS" ]; then
+                        echo "Removing containers using image $IMAGE"
+                        echo "$CONTAINERS" | xargs -r docker rm -f
+                    fi
+                done
 
-                echo "Removing untagged images..."
+                echo "Removing dangling/untagged images..."
+                docker image prune -f
                 docker images -f "dangling=true" -q | xargs -r docker rmi
 
                 echo "Removing older versions of my-react:dev except latest..."
                 IMAGE_IDS=$(docker images my-react:dev --format "{{.ID}}" | tail -n +2)
                 if [ "$IMAGE_IDS" ]; then
-                echo "$IMAGE_IDS" | xargs -r docker rmi
+                    echo "$IMAGE_IDS" | xargs -r docker rmi
                 fi
                 '''
             }
@@ -51,14 +58,14 @@ pipeline {
                 CONTAINER_NAME=my-react
                 PORT=5173
 
-                # Find and kill any container using the same port
+                # Kill any container already using the port
                 CONFLICTING=$(docker ps --format '{{.ID}} {{.Ports}}' | grep ":${PORT}->" | awk '{print $1}')
                 if [ "$CONFLICTING" ]; then
                     echo "Killing container(s) using port $PORT: $CONFLICTING"
                     docker rm -f $CONFLICTING
                 fi
 
-                # Remove existing container by name if it still exists
+                # Remove container with the same name if it exists
                 if [ "$(docker ps -aq -f name=^/${CONTAINER_NAME}$)" ]; then
                     echo "Removing old container named $CONTAINER_NAME"
                     docker rm -f $CONTAINER_NAME
