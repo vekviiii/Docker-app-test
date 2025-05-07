@@ -4,13 +4,13 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                deleteDir() // Clean the workspace before anything else
+                deleteDir()
             }
         }
 
         stage('Build') {
             steps {
-                sh 'docker build -t my-react:dev ./client'
+                sh 'docker build -t my-react:dev .'
             }
         }
 
