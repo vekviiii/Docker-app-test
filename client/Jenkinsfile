@@ -30,7 +30,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                CONTAINER_NAME=my-react-app
+                CONTAINER_NAME=my-react
                 PORT=5173
 
                 # Stop and remove existing container with the same name
